@@ -1,0 +1,107 @@
+version: "3.7"
+
+services:
+  # Base Image
+  # -------------------------------------------------------
+  base:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: "base"
+
+  # NGINX Proxy
+  # -------------------------------------------------------
+  proxy:
+    image: nginx:1.17.8
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - type: bind
+        source: ./config/nginx.conf
+        target: /etc/nginx/nginx.conf
+        read_only: true
+    environment:
+      - ENV=development
+    depends_on:
+      - main-site
+      - nextcloud
+    networks:
+      - main
+      - nextcloud
+
+  # Main Yesod Site
+  # -------------------------------------------------------
+  main-site:
+    build:
+      context: ./main
+      dockerfile: Dockerfile
+    image: "main-site"
+    container_name: "main-site"
+    networks:
+      - main
+    ports:
+      - 8080:3000
+    environment:
+      - PORT=$SITE_PORT
+      - YESOD_PORT=$SITE_YESOD_PORT
+      - SQLITE_DATABASE=$SITE_DATABASE
+      - ROBOT_PASS
+    volumes:
+      - ./main/app:/site/app
+      - ./main/assets:/site/assets
+      - ./main/config:/site/config
+      - ./main/Layouts:/site/Layouts
+      - ./main/src:/site/src
+      - ./main/static:/site/static
+      - ./main/templates:/site/templates
+      - ./main/test:/site/test
+      - ./main/database:/site/database/
+    stdin_open: true
+    entrypoint: ["entrypoint.sh"]
+
+  # Nextcloud
+  # -------------------------------------------------------
+  nextcloud:
+    image: nextcloud:apache
+    container_name: "nextcloud"
+    restart: always
+    environment:
+      - MYSQL_HOST=nextcloud-db
+      - MYSQL_DATABASE=myNextCloudDB
+      - MYSQL_USER=myNextCloudUser
+      - MYSQL_PASSWORD=$NC_MYSQL_PASSWORD
+      - NEXTCLOUD_TRUSTED_DOMAINS=$NC_DOMAINS
+    ports:
+      - 8082:80
+    volumes:
+      - nextcloud-storage:/var/www/html
+    networks:
+      - nextcloud
+    depends_on:
+      - nextcloud-db
+
+  # Nextcloud Database
+  # -------------------------------------------------------
+  nextcloud-db:
+    image: mariadb
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    restart: always
+    volumes:
+      - nextcloud-db:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=$NC_MYSQL_ROOT_PASSWORD
+      - MYSQL_PASSWORD=$NC_MYSQL_PASSWORD
+      - MYSQL_DATABASE=myNextCloudDB
+      - MYSQL_USER=myNextCloudUser
+    networks:
+      - nextcloud
+
+networks:
+  main:
+  nextcloud:
+
+volumes:
+  nextcloud-storage:
+  nextcloud-db:
+
