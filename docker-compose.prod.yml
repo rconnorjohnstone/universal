@@ -18,7 +18,7 @@ services:
       - 80:80
     volumes:
       - type: bind
-        source: ./config/nginx.conf
+        source: ./config/nginx_prod.conf
         target: /etc/nginx/nginx.conf
         read_only: true
     environment:
@@ -58,7 +58,7 @@ services:
       - ./main-site/static:/site/static
       - ./main-site/templates:/site/templates
       - ./main-site/test:/site/test
-      - ./main-site/database:/site/database/
+      - main-site-db:/site/database/
     stdin_open: true
     entrypoint: ["entrypoint.sh"]
 
@@ -138,3 +138,4 @@ volumes:
   gitlab-config:
   gitlab-data:
   gitlab-logs:
+  main-site-db:
