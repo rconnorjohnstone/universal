@@ -73,7 +73,7 @@ services:
       - MYSQL_DATABASE=myNextCloudDB
       - MYSQL_USER=myNextCloudUser
       - MYSQL_PASSWORD=$NC_MYSQL_PASSWORD
-      - NEXTCLOUD_TRUSTED_DOMAINS=$NC_DOMAINS
+      - NEXTCLOUD_TRUSTED_DOMAINS="nextcloud.rconnorjohnstone.com www.nextcloud.rconnorjohnstone.com"
     ports:
       - 8082:80
     volumes:
